@@ -68,19 +68,19 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
             </span>
         ),
         a: ({ node, children, href, ...props }: any) => (
-            <a 
-                href={href} 
-                className="text-[#C37F38] hover:text-[#E09B54] underline" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+            <a
+                href={href}
+                className="text-[#C37F38] hover:text-[#E09B54] underline"
+                target="_blank"
+                rel="noopener noreferrer"
                 {...props}
             >
                 {children}
             </a>
         ),
         blockquote: ({ node, children, ...props }: any) => (
-            <blockquote 
-                className="border-l-4 border-[#E09B54] pl-4 py-2 mb-4 italic text-gray-600 bg-[#F7F3EF] rounded-r-lg" 
+            <blockquote
+                className="border-l-4 border-[#E09B54] pl-4 py-2 mb-4 italic text-gray-600 bg-[#F7F3EF] rounded-r-lg"
                 {...props}
             >
                 {children}
@@ -109,8 +109,8 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
     };
 
     return (
-        <ReactMarkdown 
-            remarkPlugins={[remarkGfm]} 
+        <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
             components={components}
             className="text-base"
         >

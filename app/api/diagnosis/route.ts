@@ -1,12 +1,14 @@
 import { z } from "zod";
 import {
     convertToCoreMessages,
+    Message,
     streamText,
     tool,
 } from "ai";
 import { createAnthropicVertex } from 'anthropic-vertex-ai';
 
 import { GoogleAuth } from 'google-auth-library';
+import { prisma } from "@/prisma";
 
 // Allow streaming responses up to 60 seconds
 export const maxDuration = 120;
@@ -37,8 +39,26 @@ const anthropicVertex = createAnthropicVertex({
 
 
 export async function POST(req: Request) {
-    const { messages, diagnosisType } = await req.json();
+    const { messages, diagnosisType, userEmail } = await req.json();
 
+    if (!userEmail) {
+        return new Response(JSON.stringify({ error: 'User email is required' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+
+    // Fetch the user from the database
+    const user = await prisma.user.findUnique({
+        where: { email: userEmail },
+    });
+
+    if (!user) {
+        return new Response(JSON.stringify({ error: 'User not found' }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
 
     const result = await streamText({
         model: anthropicVertex("claude-3-5-sonnet@20240620"),
@@ -52,6 +72,8 @@ export async function POST(req: Request) {
 You will be provided with an image of a skin problem from the user and you will provide them with a 6-9 lines(in a single paragraph) diagnosis, following with a skincare routine. Do not write anything other than this. Deny any non-dermatologist requests.
 Only suggest products that do not need a prescription from a dermatologist. Do not prescribe a strong skincare routine too.
 Do not every recommend or consult going to a dermatologist as it is assumed that the user is not able to go to one AT ALL COSTS!!
+
+The diagnosis type requested by user ${diagnosisType === "face" ? "Face Scan" : "Body Scan"}
 
 Apprearance: 
 
@@ -93,6 +115,25 @@ Recommended Skin Care Routine:<next_line>
 <time>PM:...routine in steps...
 The routine should be in "Time: Routine" format for morning and evening but give timing instead of the words.
 `,
+        async onFinish(message) {
+            console.log(message.text);
+
+            try {
+                // get user message text
+                const userMessage = messages.map((m: Message) => m.content).join(' ');
+                // Save the diagnosis to the database
+                await prisma.diagnosis.create({
+                    data: {
+                        userId: user.id,
+                        diagnosis: message.text,
+                        comment: userMessage
+                    },
+                });
+                console.log('Diagnosis saved successfully');
+            } catch (error) {
+                console.error('Error saving diagnosis:', error);
+            }
+        },
     });
 
     return result.toDataStreamResponse();

@@ -2,15 +2,15 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from 'lucide-react';
-import { Camera, FileText, DollarSign, MessageSquare, Zap, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { Camera, FileText, DollarSign, MessageSquare, Zap, Settings, HelpCircle, LogOut, History } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { signOut } from 'next-auth/react';
 
 interface User {
-    id?: string | null;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
+  id?: string | null;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
 }
 
 interface MobileMenuProps {
@@ -61,6 +61,10 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ activePage, onPageChange, onNew
           >
             <FileText className="w-5 h-5 mr-2" />
             Diagnosis
+          </Button>
+          <Button variant="ghost" className="w-full justify-start" onClick={() => onPageChange('history')}>
+            <History className="w-5 h-5 mr-2" />
+            Diagnosis History
           </Button>
           <Button variant="ghost" className="w-full justify-start" onClick={() => onPageChange('shop')}>
             <MessageSquare className="w-5 h-5 mr-2" />

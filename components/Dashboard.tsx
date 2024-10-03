@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Markdown } from '@/components/Markdown';
-import { Camera, FileText, DollarSign, MessageSquare, Zap, Settings, HelpCircle, LogOut, CloudUpload, Info } from 'lucide-react';
+import { Camera, FileText, DollarSign, MessageSquare, Zap, Settings, HelpCircle, LogOut, CloudUpload, Info, History, X, UploadCloud } from 'lucide-react';
 import { MagicIcon, XIcon } from './icons';
 import { toast } from "sonner";
 import {
@@ -20,6 +20,10 @@ import {
 import MobileMenu from './MobileMenu';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { ClipboardCopyIcon, InstagramLogoIcon } from '@radix-ui/react-icons';
+import DiagnosisHistory from './DiagnosisHistory';
+import PricingDialog from './PricingDialog';
+import SettingsDialog from './SettingsDialog';
 
 interface User {
     id?: string | null;
@@ -39,16 +43,34 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+    const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages } = useChat({
         api: "/api/diagnosis",
+        body: {
+            diagnosisType: selectedDiagnosis,
+            userEmail: user.email!,
+        },
+        keepLastMessageOnError: true,
     });
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            toast.success("Copied to clipboard");
+        }).catch((err) => {
+            console.error('Failed to copy: ', err);
+            toast.error("Failed to copy to clipboard");
+        });
+    };
+
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -63,13 +85,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         }
     };
 
-    const handleDiagnosisSubmit = (event: React.FormEvent) => {
+    const handleDiagnosisSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         if (selectedDiagnosis && image) {
-            handleSubmit(event, {
-                experimental_attachments: fileInputRef.current?.files || undefined,
-            });
-            setIsSubmitted(true);
+            try {
+                handleSubmit(event, {
+                    experimental_attachments: fileInputRef.current?.files || undefined,
+                });
+                setIsSubmitted(true);
+            } catch (error) {
+                console.error('Error submitting diagnosis:', error);
+                toast.error("An error occurred while submitting the diagnosis.");
+            }
         } else {
             toast.error("Please select a diagnosis type and upload an image before submitting.");
         }
@@ -86,11 +113,28 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         }
     };
 
+    const handleReplaceImage = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
     const handlePageChange = (page: string) => {
-        if (page === 'diagnosis') {
-            setActivePage(page);
-        } else {
-            setDialogOpen(true);
+        switch (page) {
+            case 'diagnosis':
+                setActivePage(page);
+                break;
+            case 'history':
+                setHistoryDialogOpen(true);
+                break;
+            case 'pricing':
+                setPricingDialogOpen(true);
+                break;
+            case 'settings':
+                setSettingsDialogOpen(true);
+                break;
+            default:
+                setDialogOpen(true);
         }
     };
 
@@ -148,6 +192,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 >
                     <FileText className="w-5 h-5 mr-2" />
                     Diagnosis
+                </Button>
+                <Button variant="ghost" className="w-full justify-start mb-2" onClick={() => handlePageChange('history')}>
+                    <History className="w-5 h-5 mr-2" />
+                    Diagnosis History
                 </Button>
                 <Button variant="ghost" className="w-full justify-start mb-2" onClick={() => handlePageChange('shop')}>
                     <MessageSquare className="w-5 h-5 mr-2" />
@@ -285,7 +333,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                             <form onSubmit={handleDiagnosisSubmit}>
                                 <div className="mb-6">
                                     <h2 className="text-lg font-semibold mb-2 text-[#525252]">Upload the image of your skin</h2>
-                                    <div className="border border-gray-300 rounded-lg p-32 text-center">
+                                    <div className="border border-gray-300 rounded-lg overflow-hidden">
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -294,17 +342,29 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                             id="image-upload"
                                             ref={fileInputRef}
                                         />
-                                        <label htmlFor="image-upload" className="cursor-pointer">
-                                            {image ? (
-                                                <img src={image} alt="Uploaded skin" className="max-w-full max-h-64 mx-auto" />
-                                            ) : (
-                                                <>
-                                                    <CloudUpload className="mx-auto h-12 w-12 text-[#C37F38]" />
-                                                    <p className="mt-1 text-sm text-[#C37F38]">Upload picture</p>
-                                                    <p className="mt-1 text-xs text-gray-500">PNG, JPG or JPEG (min. 800x400px)</p>
-                                                </>
-                                            )}
-                                        </label>
+                                        {image ? (
+                                            <div className="relative h-80 bg-gray-100">
+                                                <img
+                                                    src={image}
+                                                    alt="Uploaded skin"
+                                                    className="w-full h-full object-contain"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    onClick={handleReplaceImage}
+                                                    className="absolute bottom-4 right-4 bg-[#C37F38] hover:bg-[#D18D46] text-white transition-colors duration-200 ease-in-out"
+                                                >
+                                                    <UploadCloud className="w-4 h-4 mr-2" />
+                                                    Replace Image
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center justify-center h-80 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 ease-in-out">
+                                                <CloudUpload className="h-12 w-12 text-[#C37F38] mb-2" />
+                                                <p className="text-sm text-[#C37F38]">Upload picture</p>
+                                                <p className="mt-1 text-xs text-gray-500">PNG, JPG or JPEG (min. 800x400px)</p>
+                                            </label>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="mb-6">
@@ -325,16 +385,29 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                             <div className="mt-8 space-y-4">
                                 <h2 className="text-lg font-semibold mb-2 text-[#C37F38]">Diagnosis Results</h2>
                                 {messages.map((message, index) => (
-                                    <div key={index} className={`p-4 rounded-lg ${message.role === 'user' ? 'bg-orange-50 border' : 'bg-white border'}`}>
-                                        <div className="flex items-center mb-2">
-                                            <Avatar className="mr-2">
-                                                <AvatarImage
-                                                    src={message.role === 'user' ? (user?.image || '') : '/logo.svg'}
-                                                    alt={message.role === 'user' ? (user?.name || 'User') : 'Skinvincible'}
-                                                />
-                                                <AvatarFallback>{message.role === 'user' ? (user?.name?.charAt(0) || 'U') : 'S'}</AvatarFallback>
-                                            </Avatar>
-                                            <span className="font-semibold">{message.role === 'user' ? (user?.name || 'User') : 'Skinvincible AI'}</span>
+                                    <div key={index} className={`p-4 rounded-lg ${message.role === 'user' ? 'bg-orange-50 border' : 'bg-white border border-[#F7C189]'}`}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center">
+                                                <Avatar className="mr-2">
+                                                    <AvatarImage
+                                                        src={message.role === 'user' ? (user?.image || '') : '/logo.svg'}
+                                                        alt={message.role === 'user' ? (user?.name || 'User') : 'Skinvincible'}
+                                                    />
+                                                    <AvatarFallback>{message.role === 'user' ? (user?.name?.charAt(0) || 'U') : 'S'}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="font-semibold">{message.role === 'user' ? (user?.name || 'User') : 'Skinvincible AI'}</span>
+                                            </div>
+                                            {message.role === 'assistant' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => copyToClipboard(message.content)}
+                                                    className="text-[#C37F38] hover:bg-orange-100"
+                                                >
+                                                    <ClipboardCopyIcon className="h-4 w-4 mr-2" />
+                                                    Copy
+                                                </Button>
+                                            )}
                                         </div>
                                         <Markdown>{message.content}</Markdown>
                                         {message.experimental_attachments?.map((attachment, attachmentIndex) => (
@@ -350,19 +423,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                         ))}
                                     </div>
                                 ))}
-                                {/* check if assistant message content is there "" or not */}
-                                {messages[messages.length - 1].content === "" && isLoading && (
-                                    <div className="p-4 rounded-lg bg-white shadow-md animate-pulse">
-                                        <div className="flex items-center mb-2">
-                                            <div className="w-8 h-8 bg-gray-200 rounded-full mr-2"></div>
-                                            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                                            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                                        </div>
-                                    </div>
-                                )}
                                 <div ref={messagesEndRef} />
                             </div>
                         )}
@@ -375,6 +435,23 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 <InfoSteps />
             </div>
 
+            <DiagnosisHistory
+                open={historyDialogOpen}
+                onOpenChange={setHistoryDialogOpen}
+                userEmail={user.email!}
+            />
+
+            <PricingDialog
+                open={pricingDialogOpen}
+                onOpenChange={setPricingDialogOpen}
+            />
+
+            <SettingsDialog
+                open={settingsDialogOpen}
+                onOpenChange={setSettingsDialogOpen}
+                user={user}
+            />
+
             {/* Dialog for unavailable pages */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent className="sm:max-w-[425px]">
@@ -384,15 +461,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     <DialogDescription className="text-base text-gray-600">
                         This feature is not yet available. We're working hard to bring it to you soon!
                     </DialogDescription>
-                    <div className="flex items-center justify-between mt-4">
+                    <div className="flex flex-col space-y-4 mt-4">
                         <Link
                             href="https://x.com/skinvincible_ai"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center px-4 py-2 bg-[#F7C189] text-white rounded-full hover:bg-[#E09B54] transition-colors"
+                            className="flex items-center justify-center px-4 py-2 bg-[#F7C189] text-white rounded-full hover:bg-[#E09B54] transition-colors"
                         >
                             <XIcon className="w-5 h-5 mr-2" />
-                            <span className="font-semibold">Follow @skinvincible_ai</span>
+                            <span className="font-semibold">Follow @skinvincible_ai on X</span>
+                        </Link>
+                        <Link
+                            href="https://www.instagram.com/skinvincible_ai"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center px-4 py-2 bg-[#F7C189] text-white rounded-full hover:bg-[#E09B54] transition-colors"
+                        >
+                            <InstagramLogoIcon className="w-5 h-5 mr-2" />
+                            <span className="font-semibold">Follow @skinvincible_ai on Instagram</span>
                         </Link>
                         <Button
                             onClick={() => setDialogOpen(false)}

@@ -1,9 +1,14 @@
-// auth.ts
 import NextAuth from "next-auth"
+import { Session } from "next-auth";
+import { JWT } from "next-auth/jwt";
+import { AdapterUser } from "next-auth/adapters"
 import Google from "next-auth/providers/google"
 import Apple from "next-auth/providers/apple"
+import { PrismaAdapter } from "@auth/prisma-adapter"
+import { prisma } from "./prisma";
 
-export const { auth, handlers } = NextAuth({
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -16,13 +21,5 @@ export const { auth, handlers } = NextAuth({
   ],
   pages: {
     signIn: '/',
-  },
-  callbacks: {
-    async session({ session, token, user }) {
-      if (session.user) {
-        session.user.id = token.sub!;
-      }
-      return session;
-    },
   },
 })
