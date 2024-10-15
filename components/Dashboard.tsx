@@ -17,6 +17,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Drawer,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+} from "@/components/ui/drawer";
 import MobileMenu from './MobileMenu';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -24,6 +32,7 @@ import { ClipboardCopyIcon, InstagramLogoIcon } from '@radix-ui/react-icons';
 import DiagnosisHistory from './DiagnosisHistory';
 import PricingDialog from './PricingDialog';
 import SettingsDialog from './SettingsDialog';
+import useMediaQuery from '@/hooks/useMediaQuery';
 
 interface User {
     id?: string | null;
@@ -48,6 +57,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const isMobile = useMediaQuery('(max-width: 768px)');
+    const isTablet = useMediaQuery('(min-width: 769px) and (max-width: 1024px)');
 
     const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages } = useChat({
         api: "/api/diagnosis",
@@ -70,7 +81,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             toast.error("Failed to copy to clipboard");
         });
     };
-
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -139,7 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     };
 
     const InfoSteps = () => (
-        <div className="w-64 p-4 border rounded-2xl h-fit">
+        <div className="w-full md:w-64 mx-2 p-4 border rounded-2xl h-fit">
             <p className='text-sm text-gray-600 pb-2'>
                 Skinvincible provides you with the best care and diagnosis for your skin problems. Follow below steps 👇
             </p>
@@ -152,6 +162,36 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </ol>
         </div>
     );
+
+    const DialogOrDrawer = ({ open, onOpenChange, children }: { open: boolean, onOpenChange: (open: boolean) => void, children: React.ReactNode }) => {
+        return isMobile ? (
+            <Drawer open={open} onOpenChange={onOpenChange}>
+                <DrawerContent className="h-[85vh]">
+                    {children}
+                </DrawerContent>
+            </Drawer>
+        ) : (
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="max-w-md w-full">
+                    {children}
+                </DialogContent>
+            </Dialog>
+        );
+    };
+
+    const renderDialog = (open: boolean, onOpenChange: (open: boolean) => void, content: React.ReactNode) => {
+        const DialogComponent = isMobile ? Drawer : Dialog;
+        const ContentComponent = isMobile ? DrawerContent : DialogContent;
+
+        return (
+            <DialogComponent open={open} onOpenChange={onOpenChange}>
+                <ContentComponent className={"w-full p-0 m-0"}>
+                    {content}
+                </ContentComponent>
+            </DialogComponent>
+        );
+    };
+
 
     return (
         <div className="flex flex-col md:flex-row bg-gray-100 min-h-screen md:justify-center">
@@ -271,25 +311,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                             </Button>
                         </div>
                         {!isSubmitted ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                                 <Card
                                     className={`cursor-pointer hover:border-orange-300 ${selectedDiagnosis === 'face' ? 'border-orange-500' : 'border-orange-200'} overflow-hidden`}
                                     onClick={() => setSelectedDiagnosis('face')}
                                 >
-                                    <div className="relative p-6 h-[150px]">
+                                    <div className="relative p-4 sm:p-6 h-[150px]">
                                         <div className="flex items-center mb-2 text-[#C37F38]">
                                             <MagicIcon className="w-5 h-5 mr-2" />
                                             <h3 className="text-lg font-semibold">Start Face Diagnosis</h3>
                                         </div>
-                                        <p className="text-sm text-gray-600 pr-20">
+                                        <p className="text-sm text-gray-600 pr-16 sm:pr-20">
                                             Skinvincible provides you with the best care and diagnosis for your skin problems.
                                         </p>
-                                        <div className="absolute bottom-3 right-3 w-20 h-20">
+                                        <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 w-16 h-16 sm:w-20 sm:h-20">
                                             <Image
                                                 src="/face-icon.svg"
                                                 alt="Face Icon"
-                                                width={80}
-                                                height={80}
+                                                layout="fill"
                                                 objectFit="contain"
                                             />
                                         </div>
@@ -299,20 +338,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                     className={`cursor-pointer hover:border-orange-300 ${selectedDiagnosis === 'body' ? 'border-orange-500' : 'border-orange-200'} overflow-hidden`}
                                     onClick={() => setSelectedDiagnosis('body')}
                                 >
-                                    <div className="relative p-6 h-[150px]">
+                                    <div className="relative p-4 sm:p-6 h-[150px]">
                                         <div className="flex items-center mb-2 text-[#C37F38]">
                                             <MagicIcon className="w-5 h-5 mr-2" />
                                             <h3 className="text-lg font-semibold">Start Body Diagnosis</h3>
                                         </div>
-                                        <p className="text-sm text-gray-600 pr-20">
+                                        <p className="text-sm text-gray-600 pr-16 sm:pr-20">
                                             Skinvincible provides you with the best care and diagnosis for your skin problems.
                                         </p>
-                                        <div className="absolute bottom-3 right-3 w-20 h-20">
+                                        <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 w-16 h-16 sm:w-20 sm:h-20">
                                             <Image
                                                 src="/body-icon.svg"
                                                 alt="Body Icon"
-                                                width={80}
-                                                height={80}
+                                                layout="fill"
                                                 objectFit="contain"
                                             />
                                         </div>
@@ -323,17 +361,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                 </Card>
                             </div>
                         ) : (
-                            <div className="mb-8 p-4 bg-orange-100 rounded-lg">
-                                <p className="font-semibold text-[#C37F38]">
+                            <div className="mb-8 p-4 bg-gradient-to-r from-[#C37F38] to-[#F7C189] rounded-lg text-white">
+                                <h2 className="font-semibold text-lg mb-2">
                                     Selected Diagnosis: {selectedDiagnosis === 'face' ? 'Face' : 'Body'}
+                                </h2>
+                                <p className="text-sm">
+                                    {selectedDiagnosis === 'face'
+                                        ? 'Analyzing facial skin conditions and providing personalized care recommendations.'
+                                        : 'Examining body skin issues and offering tailored treatment suggestions.'}
                                 </p>
                             </div>
                         )}
                         {!isSubmitted && (
-                            <form onSubmit={handleDiagnosisSubmit}>
-                                <div className="mb-6">
+                            <form onSubmit={handleDiagnosisSubmit} className="space-y-6">
+                                <div>
                                     <h2 className="text-lg font-semibold mb-2 text-[#525252]">Upload the image of your skin</h2>
-                                    <div className="border border-gray-300 rounded-lg overflow-hidden">
+                                    <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -367,16 +410,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                         )}
                                     </div>
                                 </div>
-                                <div className="mb-6">
+                                <div>
                                     <h2 className="text-lg font-semibold mb-2 text-[#525252]">Your comments</h2>
                                     <Textarea
                                         value={input}
                                         onChange={handleInputChange}
                                         placeholder="I want a skin care routine for my skin type."
-                                        className="w-full h-32"
+                                        className="w-full h-32 border-gray-300 focus:border-[#C37F38] focus:ring-[#C37F38]"
                                     />
                                 </div>
-                                <Button type="submit" className="w-full bg-[#C37F38] hover:bg-[#D18D46] text-white" disabled={isLoading}>
+                                <Button
+                                    type="submit"
+                                    className="w-full bg-[#C37F38] hover:bg-[#D18D46] text-white transition-colors duration-200 ease-in-out"
+                                    disabled={isLoading || !selectedDiagnosis || !image}
+                                >
                                     {isLoading ? 'Processing...' : `Start ${selectedDiagnosis === 'face' ? 'Face' : 'Body'} Diagnosis`}
                                 </Button>
                             </form>
@@ -385,7 +432,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                             <div className="mt-8 space-y-4">
                                 <h2 className="text-lg font-semibold mb-2 text-[#C37F38]">Diagnosis Results</h2>
                                 {messages.map((message, index) => (
-                                    <div key={index} className={`p-4 rounded-lg ${message.role === 'user' ? 'bg-orange-50 border' : 'bg-white border border-[#F7C189]'}`}>
+                                    <div key={index} className={`p-4 rounded-lg ${message.role === 'user' ? 'bg-orange-50 border-orange-100' : 'bg-white border-[#F7C189]'} border`}>
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="flex items-center">
                                                 <Avatar className="mr-2">
@@ -395,7 +442,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                                     />
                                                     <AvatarFallback>{message.role === 'user' ? (user?.name?.charAt(0) || 'U') : 'S'}</AvatarFallback>
                                                 </Avatar>
-                                                <span className="font-semibold">{message.role === 'user' ? (user?.name || 'User') : 'Skinvincible AI'}</span>
+                                                <span className="font-semibold text-[#525252]">{message.role === 'user' ? (user?.name || 'User') : 'Skinvincible AI'}</span>
                                             </div>
                                             {message.role === 'assistant' && (
                                                 <Button
@@ -409,7 +456,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                                                 </Button>
                                             )}
                                         </div>
-                                        <Markdown>{message.content}</Markdown>
+                                        <div className="prose prose-sm max-w-none">
+                                            <Markdown>{message.content}</Markdown>
+                                        </div>
                                         {message.experimental_attachments?.map((attachment, attachmentIndex) => (
                                             attachment.contentType?.startsWith('image/') && (
                                                 <img
@@ -435,74 +484,75 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 <InfoSteps />
             </div>
 
-            <DiagnosisHistory
-                open={historyDialogOpen}
-                onOpenChange={setHistoryDialogOpen}
-                userEmail={user.email!}
-            />
+            {/* Use DialogOrDrawer for responsive dialogs */}
+            {renderDialog(
+                historyDialogOpen,
+                setHistoryDialogOpen,
+                <DiagnosisHistory userEmail={user.email!} />
+            )}
 
-            <PricingDialog
-                open={pricingDialogOpen}
-                onOpenChange={setPricingDialogOpen}
-            />
+            {renderDialog(
+                pricingDialogOpen,
+                setPricingDialogOpen,
+                <PricingDialog />
+            )}
 
-            <SettingsDialog
-                open={settingsDialogOpen}
-                onOpenChange={setSettingsDialogOpen}
-                user={user}
-            />
+            <DialogOrDrawer open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+                <SettingsDialog user={user} />
+            </DialogOrDrawer>
 
             {/* Dialog for unavailable pages */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-[#C37F38]">Feature Coming Soon</DialogTitle>
-                    </DialogHeader>
-                    <DialogDescription className="text-base text-gray-600">
-                        This feature is not yet available. We're working hard to bring it to you soon!
-                    </DialogDescription>
-                    <div className="flex flex-col space-y-4 mt-4">
-                        <Link
-                            href="https://x.com/skinvincible_ai"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center px-4 py-2 bg-[#F7C189] text-white rounded-full hover:bg-[#E09B54] transition-colors"
-                        >
-                            <XIcon className="w-5 h-5 mr-2" />
-                            <span className="font-semibold">Follow @skinvincible_ai on X</span>
-                        </Link>
-                        <Link
-                            href="https://www.instagram.com/skinvincible_ai"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center px-4 py-2 bg-[#F7C189] text-white rounded-full hover:bg-[#E09B54] transition-colors"
-                        >
-                            <InstagramLogoIcon className="w-5 h-5 mr-2" />
-                            <span className="font-semibold">Follow @skinvincible_ai on Instagram</span>
-                        </Link>
-                        <Button
-                            onClick={() => setDialogOpen(false)}
-                            variant="outline"
-                            className="border-[#C37F38] text-[#C37F38] hover:bg-[#F7C189] hover:text-white"
-                        >
-                            Close
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <DialogOrDrawer open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogHeader className='mt-2'>
+                    <DialogTitle className="text-2xl font-bold text-[#C37F38]">Feature Coming Soon</DialogTitle>
+                </DialogHeader>
+                <DialogDescription className="text-base text-gray-600 mx-4">
+                    This feature is not yet available. We're working hard to bring it to you soon!
+                </DialogDescription>
+                <div className="flex flex-col space-y-4 mt-4 px-4">
+                    <Link
+                        href="https://x.com/skinvincible_ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center px-4 py-2 bg-[#F7C189] text-white rounded-full hover:bg-[#E09B54] transition-colors"
+                    >
+                        <XIcon className="w-5 h-5 mr-2" />
+                        <span className="font-semibold">Follow @skinvincible_ai on X</span>
+                    </Link>
+                    <Link
+                        href="https://www.instagram.com/skinvincible_ai"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center px-4 py-2 bg-[#F7C189] text-white rounded-full hover:bg-[#E09B54] transition-colors"
+                    >
+                        <InstagramLogoIcon className="w-5 h-5 mr-2" />
+                        <span className="font-semibold">Follow @skinvincible_ai on Instagram</span>
+                    </Link>
+                    <Button
+                        onClick={() => setDialogOpen(false)}
+                        variant="outline"
+                        className="border-[#C37F38] text-[#C37F38] hover:bg-[#F7C189] hover:text-white"
+                    >
+                        Close
+                    </Button>
+                </div>
+            </DialogOrDrawer>
 
-            {/* Info Dialog for mobile */}
-            <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>How to Use Skinvincible</DialogTitle>
-                    </DialogHeader>
-                    <DialogDescription className='justify-center flex items-center'>
-                        <InfoSteps />
-                    </DialogDescription>
-                    <Button onClick={() => setInfoDialogOpen(false)}>Close</Button>
-                </DialogContent>
-            </Dialog>
+            {/* Info Dialog/Drawer for mobile */}
+            <DialogOrDrawer open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
+                <DialogHeader>
+                    <DialogTitle className='my-4 text-2xl font-bold'>How to Use Skinvincible</DialogTitle>
+                </DialogHeader>
+                <DialogDescription className='justify-center flex items-center'>
+                    <InfoSteps />
+                </DialogDescription>
+                <Button
+                    onClick={() => setInfoDialogOpen(false)}
+                    className='mx-4 my-4 bg-[#C37F38] hover:bg-[#D18D46] text-white'
+                >
+                    Close
+                </Button>
+            </DialogOrDrawer>
         </div>
     );
 };
