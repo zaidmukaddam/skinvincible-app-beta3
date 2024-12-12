@@ -1,42 +1,15 @@
-import { z } from "zod";
+// /api/diagnosis/route.ts
 import {
     convertToCoreMessages,
     Message,
     streamText,
     tool,
 } from "ai";
-import { createAnthropicVertex } from 'anthropic-vertex-ai';
-
-import { GoogleAuth } from 'google-auth-library';
+import { anthropic } from '@ai-sdk/anthropic'
 import { prisma } from "@/prisma";
 
 // Allow streaming responses up to 60 seconds
 export const maxDuration = 120;
-
-// Helper function to get Google credentials
-// You can encode your service account key using the following command:
-// base64 -i /path/to/your-service-account-key.json | tr -d '\n' > encoded_credentials.txt
-// Then set the GOOGLE_APPLICATION_CREDENTIALS_BASE64 environment variable to the contents of encoded_credentials.txt
-function getCredentials() {
-    const credentialsBase64 = process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64;
-    if (!credentialsBase64) {
-        throw new Error('GOOGLE_APPLICATION_CREDENTIALS_BASE64 environment variable is not set');
-    }
-    return JSON.parse(Buffer.from(credentialsBase64, 'base64').toString());
-}
-
-// Google Vertex setup for Anthropic
-const auth = new GoogleAuth({
-    scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-    credentials: getCredentials(),
-});
-
-const anthropicVertex = createAnthropicVertex({
-    region: process.env.GOOGLE_VERTEX_REGION,
-    projectId: process.env.GOOGLE_VERTEX_PROJECT_ID,
-    googleAuth: auth,
-});
-
 
 export async function POST(req: Request) {
     const { messages, diagnosisType, userEmail } = await req.json();
@@ -61,7 +34,7 @@ export async function POST(req: Request) {
     }
 
     const result = await streamText({
-        model: anthropicVertex("claude-3-5-sonnet@20240620"),
+        model: anthropic("claude-3-5-sonnet-latest"),
         messages: convertToCoreMessages(messages),
         temperature: 0.4,
         topP: 0.2,
