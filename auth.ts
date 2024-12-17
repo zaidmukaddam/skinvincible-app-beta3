@@ -20,6 +20,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   cookies: {
+    csrfToken: {
+      name: 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'none',
+        path: '/',
+        secure: true
+      }
+    },
     pkceCodeVerifier: {
       name: 'next-auth.pkce.code_verifier',
       options: {
