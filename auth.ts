@@ -19,6 +19,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.APPLE_SECRET!,
     }),
   ],
+  cookies: {
+    pkceCodeVerifier: {
+      name: 'next-auth.pkce.code_verifier',
+      options: {
+        httpOnly: true,
+        sameSite: 'none',
+        path: '/',
+        secure: true
+      }
+    }
+  },
   pages: {
     signIn: '/',
   },
